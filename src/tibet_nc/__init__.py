@@ -14,7 +14,7 @@ Audit:     Full TIBET provenance chain per command
 Status: Pre-alpha (v0.1.0a1) — API and protocol WILL change.
 """
 
-__version__ = "0.1.0a1"
+__version__ = "0.1.1"
 __status__ = "Pre-Alpha"
 
 # Will be populated as modules stabilize

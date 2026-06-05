@@ -217,7 +217,7 @@ class TibetSession:
                 # --norc: geen .bashrc laden (voorkomt alias exploits)
                 env = {
                     "HOME": "/tmp/tibet-nc",
-                    "PATH": "/usr/bin:/bin",
+                    "PATH": "/usr/local/tibet-nc-bin:/usr/bin:/bin",
                     "TERM": "xterm",
                     "PS1": f"tibet-nc@{HOSTNAME}$ ",
                     "TIBET_SESSION": self.session_id,
@@ -258,17 +258,24 @@ class TibetSession:
             os.write(self.fd, (command + '\n').encode('utf-8'))
 
             # Lees output met timeout
+            # Langere timeout voor install/update commands
+            import re
+            is_long_cmd = any(kw in command.lower() for kw in
+                              ['apt', 'install', 'update', 'upgrade', 'pip', 'cargo', 'make'])
+            max_wait = 60.0 if is_long_cmd else 10.0
             output_parts = []
-            deadline = time.time() + 5.0  # Max 5 seconden wachten op output
+            deadline = time.time() + max_wait
 
             while time.time() < deadline:
-                r, _, _ = select.select([self.fd], [], [], 0.2)
+                r, _, _ = select.select([self.fd], [], [], 0.3)
                 if self.fd in r:
                     try:
                         chunk = os.read(self.fd, 8192).decode('utf-8', errors='replace')
                         if chunk:
                             output_parts.append(chunk)
-                            deadline = time.time() + 0.5  # Reset kort na output
+                            # Longer settle time for package managers
+                            settle = 2.0 if is_long_cmd else 0.5
+                            deadline = min(time.time() + settle, time.time() + max_wait)
                     except OSError:
                         break
                 elif output_parts:
@@ -278,10 +285,24 @@ class TibetSession:
             output = ''.join(output_parts)
 
             # Strip ANSI escape codes en terminal control sequences
-            import re
             output = re.sub(r'\x1b\[[?]?\d*[a-zA-Z]', '', output)  # ANSI escapes
             output = re.sub(r'\x1b\[\d*;\d*[a-zA-Z]', '', output)  # Color codes
             output = re.sub(r'\r', '', output)  # Carriage returns
+
+            # Collapse duplicate progress lines (apt percentages, pip downloads)
+            # Lines that only differ in numbers are collapsed to the final one
+            lines_raw = output.split('\n')
+            collapsed = []
+            for line in lines_raw:
+                # Skip apt progress lines like "  50% [Working]", "Get:1 ..."
+                if re.match(r'^\s*\d+%\s', line.strip()):
+                    if collapsed and re.match(r'^\s*\d+%\s', collapsed[-1].strip()):
+                        collapsed[-1] = line  # Replace with latest progress
+                    else:
+                        collapsed.append(line)
+                else:
+                    collapsed.append(line)
+            output = '\n'.join(collapsed)
 
             # Strip het commando zelf uit de output (echo)
             lines = output.split('\n')
