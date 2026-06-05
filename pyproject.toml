@@ -1,0 +1,61 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tibet-nc"
+version = "0.1.0a1"
+description = "Secure remote shell via Matrix E2EE - no ports, no TCP surface, TIBET L4 Airlock verification."
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "J. van de Meent", email = "jasper@humotica.com"},
+    {name = "R. AI", email = "root_idd@humotica.nl"},
+]
+maintainers = [
+    {name = "Humotica AI Lab", email = "ai@humotica.nl"},
+]
+keywords = [
+    "tibet", "matrix", "e2ee", "remote-shell", "ssh-alternative",
+    "airlock", "provenance", "zero-trust", "no-port",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Communications :: Chat",
+]
+
+dependencies = [
+    "matrix-nio>=0.21",
+    "python-dotenv>=1.0",
+    "requests>=2.28",
+]
+
+[project.optional-dependencies]
+e2ee = [
+    "matrix-nio[e2e]>=0.21",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+]
+
+[project.scripts]
+tibet-nc = "tibet_nc.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/humotica/tibet-nc"
+Repository = "https://github.com/humotica/tibet-nc"
+Documentation = "https://humotica.com/docs/tibet-nc"
+Security = "https://github.com/humotica/tibet-nc/security"
